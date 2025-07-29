@@ -1,15 +1,20 @@
 // src/Login.jsx
 import React, { useState } from "react";
-import logo from "../assets/etech.png"; // Ensure the path is correct
+import { useNavigate } from "react-router-dom";
+import logo from "../assets/etech.png";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Login with:", { email, password });
-    // Add login logic here
+
+    // You can add real authentication here
+    // After success:
+    navigate("/dashboard");
   };
 
   return (
@@ -21,7 +26,6 @@ const Login = () => {
         className="card p-4 shadow rounded"
         style={{ maxWidth: "400px", width: "100%", backgroundColor: "#ffffff" }}
       >
-        {/* Logo */}
         <div className="text-center mb-4">
           <img
             src={logo}
