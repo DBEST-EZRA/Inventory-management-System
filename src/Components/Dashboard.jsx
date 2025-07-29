@@ -9,7 +9,7 @@ import {
   FaSearch,
   FaPlus,
 } from "react-icons/fa";
-import Inventory from "./Inventory"; // Create this component
+import Inventory from "./Inventory";
 import DailySales from "./DailySales";
 import MonthlySales from "./MonthlySales";
 import PendingBills from "./PendingBills";
@@ -36,11 +36,16 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="d-flex" style={{ minHeight: "100vh" }}>
+    <div className="d-flex" style={{ height: "100vh", overflow: "hidden" }}>
       {/* Sidebar */}
       <div
         className="bg-dark text-light p-3 d-flex flex-column align-items-center align-items-md-start"
-        style={{ minWidth: "60px", width: "200px" }}
+        style={{
+          width: "15vw", // 15% of the viewport width on small screens
+          maxWidth: "200px", // Limit on wider screens
+          minWidth: "60px", // Prevent it from becoming too narrow
+          flexShrink: 0,
+        }}
       >
         <div className="mb-4 w-100 text-center text-md-start">
           <h5 className="d-none d-md-block">Menu</h5>
@@ -101,7 +106,10 @@ const Dashboard = () => {
       </div>
 
       {/* Main Panel */}
-      <div className="flex-grow-1 bg-light">
+      <div
+        className="d-flex flex-column flex-grow-1 bg-light"
+        style={{ overflow: "hidden" }}
+      >
         {/* Top Bar */}
         <div
           className="d-flex justify-content-between align-items-center p-3 bg-white shadow-sm sticky-top"
@@ -123,8 +131,17 @@ const Dashboard = () => {
           </button>
         </div>
 
-        {/* Dynamic Content */}
-        <div className="p-4">{renderContent()}</div>
+        {/* Scrollable Content */}
+        <div
+          className="p-4"
+          style={{
+            overflowY: "auto",
+            flexGrow: 1,
+            minHeight: 0, // needed to enable scrolling inside flex container
+          }}
+        >
+          {renderContent()}
+        </div>
       </div>
     </div>
   );

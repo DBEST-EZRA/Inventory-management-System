@@ -73,7 +73,7 @@ const Inventory = () => {
             <tr>
               <th>Item</th>
               <th>Description</th>
-              <th>Price ($)</th>
+              <th>Price (Ksh)</th>
               <th>Quantity</th>
               <th>Status</th>
               <th>Actions</th>
