@@ -7,6 +7,7 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
+  updateDoc,
 } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -19,6 +20,7 @@ const AddUser = () => {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState("");
+  const [editingId, setEditingId] = useState(null);
 
   const fetchUsers = () => {
     const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
@@ -43,7 +45,6 @@ const AddUser = () => {
     setMessage("");
 
     try {
-      // Create in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -51,7 +52,6 @@ const AddUser = () => {
       );
       const newUser = userCredential.user;
 
-      // Add to Firestore
       await addDoc(collection(db, "users"), {
         uid: newUser.uid,
         email,
@@ -66,6 +66,38 @@ const AddUser = () => {
     } catch (err) {
       console.error("Error adding user:", err);
       setError(err.message);
+    }
+  };
+
+  const handleEdit = (user) => {
+    setEditingId(user.id);
+    setUsername(user.username);
+    setRole(user.role);
+    setEmail(user.email);
+    setShowForm(true);
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setMessage("");
+
+    try {
+      const userRef = doc(db, "users", editingId);
+      await updateDoc(userRef, {
+        username,
+        role,
+      });
+
+      setMessage("User updated successfully!");
+      setEditingId(null);
+      setEmail("");
+      setUsername("");
+      setRole("staff");
+      setShowForm(false);
+    } catch (err) {
+      console.error("Error updating user:", err);
+      setError("Failed to update user.");
     }
   };
 
@@ -87,7 +119,15 @@ const AddUser = () => {
       <div className="mb-4 text-center">
         <button
           className="btn btn-outline-primary"
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            setShowForm(!showForm);
+            if (editingId) {
+              setEditingId(null);
+              setEmail("");
+              setUsername("");
+              setRole("staff");
+            }
+          }}
         >
           {showForm ? "Hide Form" : "Add New User"}
         </button>
@@ -96,7 +136,7 @@ const AddUser = () => {
       {showForm && (
         <div className="card mb-4">
           <div className="card-body">
-            <form onSubmit={handleAddUser}>
+            <form onSubmit={editingId ? handleUpdateUser : handleAddUser}>
               {error && (
                 <div className="alert alert-danger text-center">{error}</div>
               )}
@@ -111,6 +151,7 @@ const AddUser = () => {
                   value={email}
                   required
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={!!editingId}
                 />
               </div>
 
@@ -138,7 +179,7 @@ const AddUser = () => {
               </div>
 
               <button type="submit" className="btn btn-primary w-100">
-                Add User
+                {editingId ? "Update User" : "Add User"}
               </button>
             </form>
           </div>
@@ -174,7 +215,7 @@ const AddUser = () => {
                       <td>
                         <button
                           className="btn btn-sm btn-warning me-2"
-                          onClick={() => alert("Edit feature not implemented")}
+                          onClick={() => handleEdit(user)}
                         >
                           Edit
                         </button>
