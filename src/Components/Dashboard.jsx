@@ -22,10 +22,10 @@ const Dashboard = () => {
     switch (active) {
       case "inventory":
         return <Inventory />;
-      case "daily":
-        return <DailySales />;
-      case "monthly":
-        return <MonthlySales />;
+      // case "daily":
+      //   return <DailySales />;
+      // case "monthly":
+      //   return <MonthlySales />;
       case "bills":
         return <PendingBills />;
       case "services":
@@ -69,7 +69,7 @@ const Dashboard = () => {
             onClick={() => setActive("daily")}
             title="Daily Sales"
           >
-            <FaCalendarDay className="me-2" />
+            {/* <FaCalendarDay className="me-2" />
             <span className="d-none d-md-inline">Daily Sales</span>
           </button>
           <button
@@ -78,8 +78,8 @@ const Dashboard = () => {
             }`}
             onClick={() => setActive("monthly")}
             title="Monthly Sales"
-          >
-            <FaCalendarAlt className="me-2" />
+          > */}
+            {/* <FaCalendarAlt className="me-2" />
             <span className="d-none d-md-inline">Monthly Sales</span>
           </button>
           <button
@@ -88,7 +88,7 @@ const Dashboard = () => {
             }`}
             onClick={() => setActive("bills")}
             title="Pending Bills"
-          >
+          > */}
             <FaFileInvoiceDollar className="me-2" />
             <span className="d-none d-md-inline">Pending Bills</span>
           </button>
