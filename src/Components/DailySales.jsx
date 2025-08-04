@@ -9,60 +9,49 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Table, Form } from "react-bootstrap";
-
-const sampleSales = [
-  {
-    id: 1,
-    item: "Item A",
-    description: "Description A",
-    price: 100,
-    quantity: 2,
-    paymentStatus: "Paid",
-    paymentMethod: "Mpesa",
-    date: "2025-07-29",
-  },
-  {
-    id: 2,
-    item: "Item B",
-    description: "Description B",
-    price: 150,
-    quantity: 1,
-    paymentStatus: "Unpaid",
-    paymentMethod: "Cash",
-    date: "2025-07-29",
-  },
-  {
-    id: 3,
-    item: "Item C",
-    description: "Description C",
-    price: 200,
-    quantity: 1,
-    paymentStatus: "Paid",
-    paymentMethod: "Card",
-    date: "2025-07-28",
-  },
-];
+import { db } from "./Config";
+import { collection, onSnapshot } from "firebase/firestore";
 
 const DailySales = () => {
-  const [sales, setSales] = useState(sampleSales);
+  const [sales, setSales] = useState([]);
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
   const [filteredSales, setFilteredSales] = useState([]);
 
+  // Fetch sales live from Firestore
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "sales"), (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        date: doc.data().Date?.toDate
+          ? doc.data().Date.toDate().toISOString().split("T")[0]
+          : "", // Convert Firestore Timestamp to YYYY-MM-DD
+      }));
+      setSales(data);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Filter sales by selected date
   useEffect(() => {
     const filtered = sales.filter((sale) => sale.date === selectedDate);
     setFilteredSales(filtered);
   }, [selectedDate, sales]);
 
+  // Calculate total sales amount
   const totalSales = filteredSales.reduce(
-    (acc, sale) => acc + sale.price * sale.quantity,
+    (acc, sale) =>
+      acc + Number(sale.SellingPrice || 0) * Number(sale.Quantity || 0),
     0
   );
 
   return (
     <div className="container-fluid">
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      {/* Header + Date Filter */}
+      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
         <h4>Daily Sales</h4>
         <Form.Group
           controlId="filterDate"
@@ -77,6 +66,7 @@ const DailySales = () => {
         </Form.Group>
       </div>
 
+      {/* Sales Table */}
       <Table responsive striped bordered hover>
         <thead className="table-dark">
           <tr>
@@ -91,20 +81,20 @@ const DailySales = () => {
         <tbody>
           {filteredSales.map((sale) => (
             <tr key={sale.id}>
-              <td>{sale.item}</td>
-              <td>{sale.description}</td>
-              <td>KES {sale.price}</td>
-              <td>{sale.quantity}</td>
+              <td>{sale.ItemName}</td>
+              <td>{sale.Description}</td>
+              <td>KES {sale.SellingPrice}</td>
+              <td>{sale.Quantity}</td>
               <td>
                 <span
                   className={`badge ${
-                    sale.paymentStatus === "Paid" ? "bg-success" : "bg-danger"
+                    sale.PaymentStatus === "Paid" ? "bg-success" : "bg-danger"
                   }`}
                 >
-                  {sale.paymentStatus}
+                  {sale.PaymentStatus}
                 </span>
               </td>
-              <td>{sale.paymentMethod}</td>
+              <td>{sale.PaymentMethod}</td>
             </tr>
           ))}
           {filteredSales.length === 0 && (
@@ -117,9 +107,10 @@ const DailySales = () => {
         </tbody>
       </Table>
 
+      {/* Total Sales */}
       <div className="my-4 text-end">
         <h5>
-          Total Sales: <strong>KES {totalSales}</strong>
+          Total Sales: <strong>KES {totalSales.toLocaleString()}</strong>
         </h5>
       </div>
 
@@ -127,17 +118,18 @@ const DailySales = () => {
       <div style={{ width: "100%", height: 300 }}>
         <ResponsiveContainer>
           <BarChart
-            data={filteredSales}
+            data={filteredSales.map((sale) => ({
+              name: sale.ItemName,
+              total:
+                Number(sale.SellingPrice || 0) * Number(sale.Quantity || 0),
+            }))}
             margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="item" />
+            <XAxis dataKey="name" />
             <YAxis />
             <Tooltip />
-            <Bar
-              dataKey={(entry) => entry.price * entry.quantity}
-              fill="#3c51a1"
-            />
+            <Bar dataKey="total" fill="#3c51a1" />
           </BarChart>
         </ResponsiveContainer>
       </div>

@@ -8,29 +8,63 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Form, Button } from "react-bootstrap";
-
-// Sample data - one entry per day
-const sampleSales = [
-  { date: "2025-07-01", total: 300 },
-  { date: "2025-07-02", total: 500 },
-  { date: "2025-07-03", total: 200 },
-  { date: "2025-07-04", total: 450 },
-  { date: "2025-07-10", total: 350 },
-  { date: "2025-07-20", total: 600 },
-  { date: "2025-06-01", total: 150 },
-];
+import { Form, Button, Table } from "react-bootstrap";
+import { db } from "./Config";
+import { collection, onSnapshot } from "firebase/firestore";
+import * as XLSX from "xlsx";
 
 const MonthlySales = () => {
-  const [sales, setSales] = useState(sampleSales);
-  const [selectedMonth, setSelectedMonth] = useState("2025-07");
+  const [sales, setSales] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState(
+    new Date().toISOString().slice(0, 7)
+  );
   const [filteredSales, setFilteredSales] = useState([]);
 
+  // Fetch sales data from Firestore
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "sales"), (snapshot) => {
+      const data = snapshot.docs.map((doc) => {
+        const sale = doc.data();
+        const dateStr = sale.Date?.toDate
+          ? sale.Date.toDate().toISOString().split("T")[0]
+          : "";
+        return {
+          id: doc.id,
+          date: dateStr,
+          ItemName: sale.ItemName || "",
+          Description: sale.Description || "",
+          SellingPrice: Number(sale.SellingPrice || 0),
+          Quantity: Number(sale.Quantity || 0),
+        };
+      });
+      setSales(data);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Filter and group by date
   useEffect(() => {
     const filtered = sales.filter((sale) =>
       sale.date.startsWith(selectedMonth)
     );
-    setFilteredSales(filtered);
+
+    // Group by day and sum totals
+    const dailyMap = {};
+    filtered.forEach((sale) => {
+      if (!dailyMap[sale.date]) dailyMap[sale.date] = 0;
+      dailyMap[sale.date] += sale.SellingPrice * sale.Quantity;
+    });
+
+    // Convert to array for chart & table
+    const dailyArray = Object.keys(dailyMap)
+      .sort()
+      .map((day) => ({
+        date: day,
+        total: dailyMap[day],
+      }));
+
+    setFilteredSales(dailyArray);
   }, [selectedMonth, sales]);
 
   const totalMonthlySales = filteredSales.reduce(
@@ -38,8 +72,17 @@ const MonthlySales = () => {
     0
   );
 
+  // Export to Excel
+  const generateReport = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredSales);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Monthly Sales");
+    XLSX.writeFile(workbook, `Monthly_Sales_${selectedMonth}.xlsx`);
+  };
+
   return (
     <div className="container-fluid">
+      {/* Header */}
       <div className="d-flex justify-content-between align-items-center flex-wrap mb-4">
         <h4>Monthly Sales</h4>
         <div className="d-flex align-items-center gap-3">
@@ -51,14 +94,17 @@ const MonthlySales = () => {
               onChange={(e) => setSelectedMonth(e.target.value)}
             />
           </Form.Group>
-          <Button variant="primary">Generate Report</Button>
+          <Button variant="primary" onClick={generateReport}>
+            Generate Report
+          </Button>
         </div>
       </div>
 
+      {/* Total Sales */}
       <div className="mb-4">
         <h5>
           Total Sales for {selectedMonth}:{" "}
-          <strong>KES {totalMonthlySales}</strong>
+          <strong>KES {totalMonthlySales.toLocaleString()}</strong>
         </h5>
       </div>
 
@@ -85,9 +131,30 @@ const MonthlySales = () => {
         </ResponsiveContainer>
       </div>
 
-      {filteredSales.length === 0 && (
-        <p className="text-muted mt-3">No sales data found for this month.</p>
-      )}
+      {/* Daily Sales Table */}
+      <Table striped bordered responsive className="mt-4">
+        <thead className="table-dark">
+          <tr>
+            <th>Date</th>
+            <th>Total Sales (KES)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredSales.map((sale) => (
+            <tr key={sale.date}>
+              <td>{sale.date}</td>
+              <td>{sale.total.toLocaleString()}</td>
+            </tr>
+          ))}
+          {filteredSales.length === 0 && (
+            <tr>
+              <td colSpan="2" className="text-center text-muted">
+                No sales data found for this month.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </Table>
     </div>
   );
 };
