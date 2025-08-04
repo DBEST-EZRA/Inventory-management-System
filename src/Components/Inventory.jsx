@@ -87,7 +87,7 @@ const Inventory = () => {
                 <td>{item.price}</td>
                 <td>{item.quantity}</td>
                 <td>
-                  {item.quantity < 5 ? (
+                  {item.quantity < 2 ? (
                     <span className="badge bg-danger">Low Stock</span>
                   ) : (
                     <span className="badge bg-success">In Stock</span>
