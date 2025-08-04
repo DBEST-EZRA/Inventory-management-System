@@ -62,33 +62,33 @@ const Dashboard = () => {
             <FaBoxes className="me-2" />
             <span className="d-none d-md-inline">Inventory</span>
           </button>
-          <button
+          {/* <button
             className={`btn text-start text-light mb-2 w-100 ${
               active === "daily" ? "bg-secondary" : ""
             }`}
             onClick={() => setActive("daily")}
             title="Daily Sales"
           >
-            {/* <FaCalendarDay className="me-2" />
+            <FaCalendarDay className="me-2" />
             <span className="d-none d-md-inline">Daily Sales</span>
-          </button>
-          <button
+          </button> */}
+          {/* <button
             className={`btn text-start text-light mb-2 w-100 ${
               active === "monthly" ? "bg-secondary" : ""
             }`}
             onClick={() => setActive("monthly")}
             title="Monthly Sales"
-          > */}
-            {/* <FaCalendarAlt className="me-2" />
+          >
+            <FaCalendarAlt className="me-2" />
             <span className="d-none d-md-inline">Monthly Sales</span>
-          </button>
+          </button> */}
           <button
             className={`btn text-start text-light mb-2 w-100 ${
               active === "bills" ? "bg-secondary" : ""
             }`}
             onClick={() => setActive("bills")}
             title="Pending Bills"
-          > */}
+          >
             <FaFileInvoiceDollar className="me-2" />
             <span className="d-none d-md-inline">Pending Bills</span>
           </button>
