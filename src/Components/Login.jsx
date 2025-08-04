@@ -155,7 +155,7 @@ const Login = () => {
             className="btn btn-primary w-100"
             disabled={loading}
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Logging in.." : "Login"}
           </button>
         </form>
       </div>
