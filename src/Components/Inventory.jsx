@@ -1,7 +1,7 @@
 // src/components/Inventory.jsx
 import React, { useEffect, useState } from "react";
 import { Button, Modal, Form, InputGroup } from "react-bootstrap";
-import { db } from "./Config";
+import { db, auth } from "./Config";
 import {
   collection,
   doc,
@@ -9,6 +9,9 @@ import {
   updateDoc,
   addDoc,
   serverTimestamp,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
 
@@ -24,6 +27,7 @@ const Inventory = () => {
   });
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [username, setUsername] = useState("");
 
   // Fetch inventory live
   useEffect(() => {
@@ -34,8 +38,21 @@ const Inventory = () => {
       }));
       setInventory(data);
     });
-
     return () => unsubscribe();
+  }, []);
+
+  // Fetch username for logged-in user
+  useEffect(() => {
+    const fetchUsername = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      const q = query(collection(db, "users"), where("uid", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        setUsername(querySnapshot.docs[0].data().username || "");
+      }
+    };
+    fetchUsername();
   }, []);
 
   // Open modal
@@ -86,7 +103,8 @@ const Inventory = () => {
         SellingPrice: Number(formData.sellingPrice),
         PaymentMethod: formData.paymentMethod,
         PaymentStatus: formData.paymentStatus,
-        Date: new Date(), // for reports later
+        SoldBy: username, // ✅ NEW FIELD
+        Date: new Date(),
         createdAt: serverTimestamp(),
       });
 
