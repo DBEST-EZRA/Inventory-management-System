@@ -18,11 +18,13 @@ const PendingBills = () => {
   const [editingId, setEditingId] = useState(null);
 
   // Form fields
-  const [name, setName] = useState("");
-  const [service, setService] = useState("");
-  const [amount, setAmount] = useState("");
-  const [status, setStatus] = useState("unpaid");
-  const [date, setDate] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    service: "",
+    amount: "",
+    status: "unpaid",
+    date: "",
+  });
 
   // Fetch live data
   useEffect(() => {
@@ -47,16 +49,25 @@ const PendingBills = () => {
   }, []);
 
   const clearForm = () => {
-    setName("");
-    setService("");
-    setAmount("");
-    setStatus("unpaid");
-    setDate("");
+    setFormData({
+      name: "",
+      service: "",
+      amount: "",
+      status: "unpaid",
+      date: "",
+    });
     setEditingId(null);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const { name, service, amount, status, date } = formData;
+
     if (!name || !service || !amount || !date) {
       alert("Please fill all fields");
       return;
@@ -92,15 +103,15 @@ const PendingBills = () => {
 
   const handleEdit = (bill) => {
     setEditingId(bill.id);
-    setName(bill.name);
-    setService(bill.service);
-    setAmount(bill.amount);
-    setStatus(bill.status);
-    setDate(
-      bill.date?.toDate
+    setFormData({
+      name: bill.name,
+      service: bill.service,
+      amount: bill.amount,
+      status: bill.status,
+      date: bill.date?.toDate
         ? bill.date.toDate().toISOString().split("T")[0]
-        : bill.date
-    );
+        : bill.date,
+    });
     setShowForm(true);
   };
 
@@ -112,6 +123,98 @@ const PendingBills = () => {
       console.error("Error marking as paid:", err);
     }
   };
+
+  //NEWWW
+  const handleGenerateInvoice = (bill) => {
+    const invoiceWindow = window.open("", "_blank", "width=800,height=1000");
+    invoiceWindow.document.write(`
+      <html>
+        <head>
+          <title>Invoice - ${bill.name}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              width: 210mm;
+              padding: 20px;
+              box-sizing: border-box;
+            }
+            h1 {
+              text-align: center;
+              margin-bottom: 5px;
+            }
+            h3 {
+              text-align: center;
+              margin-top: 0;
+              color: #555;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+            }
+            th, td {
+              padding: 10px;
+              border: 1px solid #ccc;
+              text-align: left;
+            }
+            .footer {
+              margin-top: 40px;
+              font-size: 14px;
+              text-align: center;
+            }
+            .total {
+              font-weight: bold;
+              background: #f5f5f5;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Etech Solutions</h1>
+          <h3>Invoice</h3>
+          <p><strong>Date Issued:</strong> ${new Date().toLocaleDateString()}</p>
+          <p><strong>Billed To:</strong> ${bill.name}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Service</th>
+                <th>Amount (KES)</th>
+                <th>Bill Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>${bill.service}</td>
+                <td>${bill.amount}</td>
+                <td>${
+                  bill.date?.toDate
+                    ? bill.date.toDate().toISOString().split("T")[0]
+                    : bill.date
+                }</td>
+                <td>${bill.status}</td>
+              </tr>
+              <tr class="total">
+                <td colspan="3">Total</td>
+                <td>KES ${bill.amount}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="footer">
+            <p><strong>Payment Upon Receipt</strong></p>
+            <p>Payment Method: M-Pesa Paybill 123456, Account: Your Name</p>
+            <p>Thank you for your business!</p>
+          </div>
+          <script>
+            window.print();
+            window.onafterprint = function() { window.close(); }
+          </script>
+        </body>
+      </html>
+    `);
+    invoiceWindow.document.close();
+  };
+
+  //END OF NEWWW
 
   // Filter & search
   const filteredBills = bills
@@ -171,8 +274,9 @@ const PendingBills = () => {
                   <Form.Label>Name</Form.Label>
                   <Form.Control
                     type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
                     required
                   />
                 </div>
@@ -180,8 +284,9 @@ const PendingBills = () => {
                   <Form.Label>Service</Form.Label>
                   <Form.Control
                     type="text"
-                    value={service}
-                    onChange={(e) => setService(e.target.value)}
+                    name="service"
+                    value={formData.service}
+                    onChange={handleChange}
                     required
                   />
                 </div>
@@ -189,16 +294,18 @@ const PendingBills = () => {
                   <Form.Label>Amount (KES)</Form.Label>
                   <Form.Control
                     type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    name="amount"
+                    value={formData.amount}
+                    onChange={handleChange}
                     required
                   />
                 </div>
                 <div className="col-md-2">
                   <Form.Label>Status</Form.Label>
                   <Form.Select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
                   >
                     <option value="unpaid">Unpaid</option>
                     <option value="paid">Paid</option>
@@ -208,8 +315,9 @@ const PendingBills = () => {
                   <Form.Label>Date</Form.Label>
                   <Form.Control
                     type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                    name="date"
+                    value={formData.date}
+                    onChange={handleChange}
                     required
                   />
                 </div>
@@ -261,13 +369,22 @@ const PendingBills = () => {
               </td>
               <td>
                 {bill.status === "unpaid" ? (
-                  <Button
-                    variant="success"
-                    size="sm"
-                    onClick={() => handleMarkAsPaid(bill.id)}
-                  >
-                    Mark as Paid
-                  </Button>
+                  <>
+                    <Button
+                      variant="success"
+                      size="sm"
+                      onClick={() => handleMarkAsPaid(bill.id)}
+                    >
+                      Mark as Paid
+                    </Button>{" "}
+                    <Button
+                      variant="info"
+                      size="sm"
+                      onClick={() => handleGenerateInvoice(bill)}
+                    >
+                      Generate Invoice
+                    </Button>{" "}
+                  </>
                 ) : (
                   <Button
                     variant="warning"
