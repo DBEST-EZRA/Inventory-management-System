@@ -6,7 +6,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "./Config";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import logo from "../assets/etech.png";
+import logo from "../assets/etech.jpg";
 
 const Login = () => {
   const [email, setEmail] = useState("");
