@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Button, Form, Table, Collapse, InputGroup } from "react-bootstrap";
-import { db } from "./Config";
+import { auth, db } from "./Config";
 import {
   collection,
   addDoc,
@@ -8,6 +8,9 @@ import {
   doc,
   onSnapshot,
   serverTimestamp,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
 
 const UserPendingBills = () => {
@@ -16,6 +19,21 @@ const UserPendingBills = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [username, setUsername] = useState("");
+
+  // Fetch username for logged-in user
+  useEffect(() => {
+    const fetchUsername = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      const q = query(collection(db, "users"), where("uid", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        setUsername(querySnapshot.docs[0].data().username || "");
+      }
+    };
+    fetchUsername();
+  }, []);
 
   // Form fields
   const [formData, setFormData] = useState({
@@ -26,27 +44,54 @@ const UserPendingBills = () => {
     date: "",
   });
 
-  // Fetch live data
+  // // Fetch live data
+  // useEffect(() => {
+  //   const unsubscribe = onSnapshot(
+  //     collection(db, "pendingbills"),where("SoldBy", "==", username)
+  //     (snapshot) => {
+  //       let data = snapshot.docs.map((doc) => ({
+  //         id: doc.id,
+  //         ...doc.data(),
+  //       }));
+
+  //       // Sort unpaid first
+  //       data.sort((a, b) =>
+  //         a.status === "unpaid" && b.status === "paid" ? -1 : 1
+  //       );
+
+  //       setBills(data);
+  //     }
+  //   );
+
+  //   return () => unsubscribe();
+  // }, []);
+
+  //ADDED
+
   useEffect(() => {
-    const unsubscribe = onSnapshot(
+    const q = query(
       collection(db, "pendingbills"),
-      (snapshot) => {
-        let data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        // Sort unpaid first
-        data.sort((a, b) =>
-          a.status === "unpaid" && b.status === "paid" ? -1 : 1
-        );
-
-        setBills(data);
-      }
+      where("SoldBy", "==", username)
     );
 
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      // Sort unpaid first
+      data.sort((a, b) =>
+        a.status === "unpaid" && b.status === "paid" ? -1 : 1
+      );
+
+      setBills(data);
+    });
+
     return () => unsubscribe();
-  }, []);
+  }, [username]); // add username as dependency
+
+  //END OF ADDED
 
   const clearForm = () => {
     setFormData({
@@ -89,6 +134,7 @@ const UserPendingBills = () => {
           service,
           amount: Number(amount),
           status,
+          SoldBy: username,
           date: new Date(date),
           createdAt: serverTimestamp(),
         });

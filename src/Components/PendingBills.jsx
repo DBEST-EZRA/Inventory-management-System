@@ -340,6 +340,7 @@ const PendingBills = () => {
             <th>Service</th>
             <th>Amount (KES)</th>
             <th>Date</th>
+            <th>Recorded By</th>
             <th>Status</th>
             <th>Action</th>
           </tr>
@@ -358,6 +359,7 @@ const PendingBills = () => {
                   ? bill.date.toDate().toISOString().split("T")[0]
                   : bill.date}
               </td>
+              <td>{bill.SoldBy}</td>
               <td>
                 <span
                   className={`badge ${
