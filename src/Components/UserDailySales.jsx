@@ -9,18 +9,45 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Table, Form, Button } from "react-bootstrap"; // Added Button
-import { db } from "./Config";
-import { collection, onSnapshot } from "firebase/firestore";
+import { auth, db } from "./Config";
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 
 const UserDailySales = () => {
   const [sales, setSales] = useState([]);
+  const [username, setUsername] = useState("");
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
   const [filteredSales, setFilteredSales] = useState([]);
 
+  //   useEffect(() => {
+  //     const unsubscribe = onSnapshot(collection(db, "sales"), (snapshot) => {
+  //       const data = snapshot.docs.map((doc) => ({
+  //         id: doc.id,
+  //         ...doc.data(),
+  //         date: doc.data().Date?.toDate
+  //           ? doc.data().Date.toDate().toISOString().split("T")[0]
+  //           : "",
+  //       }));
+  //       setSales(data);
+  //     });
+
+  //     return () => unsubscribe();
+  //   }, []);
+
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "sales"), (snapshot) => {
+    const q = query(
+      collection(db, "sales"),
+      where("SoldBy", "==", username) // filter by username
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -32,6 +59,22 @@ const UserDailySales = () => {
     });
 
     return () => unsubscribe();
+  }, [username]);
+
+  useEffect(() => {
+    const fetchUsername = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      const q = query(
+        collection(db, "users"),
+        where("email", "==", user.email)
+      );
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        setUsername(querySnapshot.docs[0].data().username);
+      }
+    };
+    fetchUsername();
   }, []);
 
   useEffect(() => {

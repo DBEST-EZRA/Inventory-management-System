@@ -133,6 +133,7 @@ const DailySales = () => {
             <th>Quantity</th>
             <th>Payment Status</th>
             <th>Payment Method</th>
+            <th>Sold By</th>
             <th>Action</th> {/* New column */}
           </tr>
         </thead>
@@ -153,6 +154,7 @@ const DailySales = () => {
                 </span>
               </td>
               <td>{sale.PaymentMethod}</td>
+              <td>{sale.SoldBy}</td>
               <td>
                 <Button
                   size="sm"
