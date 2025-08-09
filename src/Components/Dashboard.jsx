@@ -1,33 +1,55 @@
 // src/Dashboard.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaBoxes,
   FaCalendarDay,
-  FaCalendarAlt,
   FaFileInvoiceDollar,
   FaConciergeBell,
-  FaSearch,
-  FaPlus,
+  FaUser,
 } from "react-icons/fa";
 import Inventory from "./Inventory";
-import DailySales from "./DailySales";
-import MonthlySales from "./MonthlySales";
-import PendingBills from "./PendingBills";
+import UserDailySales from "./UserDailySales";
+import UserPendingBills from "./UserPendingBills";
 import ServiceSales from "./ServiceSales";
+import { auth, db } from "./Config";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { signOut } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const [active, setActive] = useState("inventory");
+  const [username, setUsername] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUsername = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      const q = query(
+        collection(db, "users"),
+        where("email", "==", user.email)
+      );
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        setUsername(querySnapshot.docs[0].data().username);
+      }
+    };
+    fetchUsername();
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate("/");
+  };
 
   const renderContent = () => {
     switch (active) {
       case "inventory":
         return <Inventory />;
-      // case "daily":
-      //   return <DailySales />;
-      // case "monthly":
-      //   return <MonthlySales />;
+      case "daily":
+        return <UserDailySales />;
       case "bills":
-        return <PendingBills />;
+        return <UserPendingBills />;
       case "services":
         return <ServiceSales />;
       default:
@@ -41,9 +63,9 @@ const Dashboard = () => {
       <div
         className="bg-dark text-light p-3 d-flex flex-column align-items-center align-items-md-start"
         style={{
-          width: "15vw", // 15% of the viewport width on small screens
-          maxWidth: "200px", // Limit on wider screens
-          minWidth: "60px", // Prevent it from becoming too narrow
+          width: "15vw",
+          maxWidth: "200px",
+          minWidth: "60px",
           flexShrink: 0,
         }}
       >
@@ -62,7 +84,7 @@ const Dashboard = () => {
             <FaBoxes className="me-2" />
             <span className="d-none d-md-inline">Inventory</span>
           </button>
-          {/* <button
+          <button
             className={`btn text-start text-light mb-2 w-100 ${
               active === "daily" ? "bg-secondary" : ""
             }`}
@@ -71,17 +93,7 @@ const Dashboard = () => {
           >
             <FaCalendarDay className="me-2" />
             <span className="d-none d-md-inline">Daily Sales</span>
-          </button> */}
-          {/* <button
-            className={`btn text-start text-light mb-2 w-100 ${
-              active === "monthly" ? "bg-secondary" : ""
-            }`}
-            onClick={() => setActive("monthly")}
-            title="Monthly Sales"
-          >
-            <FaCalendarAlt className="me-2" />
-            <span className="d-none d-md-inline">Monthly Sales</span>
-          </button> */}
+          </button>
           <button
             className={`btn text-start text-light mb-2 w-100 ${
               active === "bills" ? "bg-secondary" : ""
@@ -112,22 +124,16 @@ const Dashboard = () => {
       >
         {/* Top Bar */}
         <div
-          className="d-flex justify-content-between align-items-center p-3 bg-white shadow-sm sticky-top"
+          className="d-flex justify-content-end align-items-center p-3 bg-white shadow-sm sticky-top gap-3"
           style={{ zIndex: 100 }}
         >
-          <div className="input-group" style={{ maxWidth: "300px" }}>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Search..."
-            />
-            <button className="btn btn-outline-secondary">
-              <FaSearch />
-            </button>
-          </div>
-          <button className="btn btn-primary">
-            <FaPlus className="me-2" />
-            <span>New Sale</span>
+          <FaUser className="text-secondary" />
+          <strong>{username}</strong>
+          <button
+            onClick={handleLogout}
+            className="btn btn-outline-danger btn-sm"
+          >
+            Logout
           </button>
         </div>
 
@@ -137,7 +143,7 @@ const Dashboard = () => {
           style={{
             overflowY: "auto",
             flexGrow: 1,
-            minHeight: 0, // needed to enable scrolling inside flex container
+            minHeight: 0,
           }}
         >
           {renderContent()}

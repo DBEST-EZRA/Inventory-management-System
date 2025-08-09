@@ -1,25 +1,52 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaBoxes,
   FaCalendarDay,
   FaCalendarAlt,
   FaFileInvoiceDollar,
   FaConciergeBell,
-  FaSearch,
-  FaPlus,
   FaUserPlus,
   FaCartPlus,
+  FaUserCircle,
+  FaSignOutAlt,
 } from "react-icons/fa";
 import Inventory from "./Inventory";
 import DailySales from "./DailySales";
 import MonthlySales from "./MonthlySales";
 import PendingBills from "./PendingBills";
 import ServiceSales from "./ServiceSales";
-import AddItem from "./AddItem"; // new component
-import AddUser from "./AddUser"; // new component
+import AddItem from "./AddItem";
+import AddUser from "./AddUser";
+import { auth, db } from "./Config";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { signOut } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
   const [active, setActive] = useState("inventory");
+  const [username, setUsername] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUsername = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      const q = query(
+        collection(db, "users"),
+        where("email", "==", user.email)
+      );
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        setUsername(querySnapshot.docs[0].data().username);
+      }
+    };
+    fetchUsername();
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate("/");
+  };
 
   const renderContent = () => {
     switch (active) {
@@ -98,22 +125,17 @@ const AdminDashboard = () => {
       >
         {/* Top Bar */}
         <div
-          className="d-flex justify-content-between align-items-center p-3 bg-white shadow-sm sticky-top"
+          className="d-flex justify-content-end align-items-center p-3 bg-white shadow-sm sticky-top gap-3"
           style={{ zIndex: 100 }}
         >
-          <div className="input-group" style={{ maxWidth: "300px" }}>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Search..."
-            />
-            <button className="btn btn-outline-secondary">
-              <FaSearch />
-            </button>
-          </div>
-          <button className="btn btn-primary">
-            <FaPlus className="me-2" />
-            <span>New Sale</span>
+          <FaUserCircle size={20} />
+          <strong>{username}</strong>
+          <button
+            className="btn btn-outline-danger btn-sm d-flex align-items-center"
+            onClick={handleLogout}
+          >
+            <FaSignOutAlt className="me-1" />
+            Logout
           </button>
         </div>
 
