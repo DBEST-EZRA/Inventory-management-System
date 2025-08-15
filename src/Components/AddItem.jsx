@@ -22,6 +22,9 @@ const AddItem = () => {
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  // NEW: search state
+  const [searchTerm, setSearchTerm] = useState("");
+
   // Fetch inventory items live
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "inventory"), (snapshot) => {
@@ -101,6 +104,13 @@ const AddItem = () => {
       }
     }
   };
+
+  // Filtered inventory based on search
+  const filteredInventory = inventory.filter(
+    (inv) =>
+      inv.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inv.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="container py-5">
@@ -189,6 +199,18 @@ const AddItem = () => {
       <div className="card">
         <div className="card-body">
           <h5 className="card-title mb-3">All Inventory Items</h5>
+
+          {/* NEW: Search box */}
+          <div className="mb-3">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search by item or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
           <div className="table-responsive">
             <table className="table table-striped">
               <thead className="table-dark">
@@ -201,14 +223,14 @@ const AddItem = () => {
                 </tr>
               </thead>
               <tbody>
-                {inventory.length === 0 ? (
+                {filteredInventory.length === 0 ? (
                   <tr>
                     <td colSpan="5" className="text-center">
                       No items found.
                     </td>
                   </tr>
                 ) : (
-                  inventory.map((inv) => (
+                  filteredInventory.map((inv) => (
                     <tr key={inv.id}>
                       <td>{inv.item}</td>
                       <td>{inv.description}</td>
