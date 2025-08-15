@@ -5,6 +5,7 @@ import {
   collection,
   addDoc,
   updateDoc,
+  deleteDoc,
   doc,
   onSnapshot,
   serverTimestamp,
@@ -16,6 +17,8 @@ const PendingBills = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   // Form fields
   const [formData, setFormData] = useState({
@@ -62,6 +65,18 @@ const PendingBills = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this item?")) {
+      try {
+        await deleteDoc(doc(db, "pendingbills", id));
+        setMessage("Item deleted successfully!");
+      } catch (err) {
+        console.error("Delete failed:", err);
+        setError("Failed to delete item.");
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -388,13 +403,21 @@ const PendingBills = () => {
                     </Button>{" "}
                   </>
                 ) : (
-                  <Button
-                    variant="warning"
-                    size="sm"
-                    onClick={() => handleEdit(bill)}
-                  >
-                    Edit
-                  </Button>
+                  <>
+                    <Button
+                      variant="warning"
+                      size="sm"
+                      onClick={() => handleEdit(bill)}
+                    >
+                      Edit
+                    </Button>
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={() => handleDelete(bill.id)}
+                    >
+                      Delete
+                    </button>
+                  </>
                 )}
               </td>
             </tr>
